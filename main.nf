@@ -304,8 +304,8 @@ if (params.part == 4){
     tag "${sample_name}"
     echo true
     publishDir "results/", mode: params.mode
-    memory { 5.GB * params.batch * mem_factor / 100 }
-    time { 40.m * params.batch * mem_factor / 100  }
+    // memory { 5.GB * params.batch * mem_factor / 100 }
+    // time { 40.m * params.batch * mem_factor / 100  }
 
     input:
     path rbin_dir from ch_rbin
