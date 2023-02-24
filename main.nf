@@ -39,7 +39,7 @@ def helpMessage() {
 
     Optional arguments:
       --wgs           [int] indicate the memory factor for WGS
-      --test          [flag] test mode (use only 5 samples)
+      --test          [flag/int] Run the pipeline in a test mode and subset total samples to n samples. (5 default if no number provided)
       --help          [flag] Show help messages
 
     """.stripIndent()
@@ -124,8 +124,9 @@ if (params.gender) ch_gender = Channel.value(file(params.gender))
 if (params.cov) ch_cov = Channel.value(file(params.cov))
 
 // Test mode
-if (params.test && params.design) ch_files_sets = ch_files_sets.take(5)
-if (params.test && (params.bindir || params.binlist || params.rbindir || params.samples)) ch_sample_names = ch_sample_names.take(5)
+if (params.test == true) {subset_samples = 5} else {subset_samples = params.test}
+if (params.test && params.design) ch_files_sets = ch_files_sets.take(subset_samples)
+if (params.test && (params.bindir || params.binlist || params.rbindir || params.samples)) ch_sample_names = ch_sample_names.take(subset_samples)
 
 /*
 ================================================================================
