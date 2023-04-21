@@ -39,7 +39,7 @@ def helpMessage() {
 
     Optional arguments:
       --wgs           [int] indicate the memory factor for WGS
-      --test          [flag] test mode (use only 5 samples)
+      --test          [flag/int] Run the pipeline in a test mode and subset total samples to n samples. (5 default if no number provided)
       --help          [flag] Show help messages
 
     """.stripIndent()
@@ -124,8 +124,9 @@ if (params.gender) ch_gender = Channel.value(file(params.gender))
 if (params.cov) ch_cov = Channel.value(file(params.cov))
 
 // Test mode
-if (params.test && params.design) ch_files_sets = ch_files_sets.take(5)
-if (params.test && (params.bindir || params.binlist || params.rbindir || params.samples)) ch_sample_names = ch_sample_names.take(5)
+if (params.test == true) {subset_samples = 5} else {subset_samples = params.test}
+if (params.test && params.design) ch_files_sets = ch_files_sets.take(subset_samples)
+if (params.test && (params.bindir || params.binlist || params.rbindir || params.samples)) ch_sample_names = ch_sample_names.take(subset_samples)
 
 /*
 ================================================================================
@@ -269,8 +270,8 @@ if (params.part == 3) {
     tag "${sample_name}"
     echo true
     publishDir "results/", mode: params.mode
-    memory { 1.GB * params.batch * mem_factor / 100 }
-    time { 40.m * params.batch * mem_factor / 100  }
+//    memory { 1.GB * params.batch * mem_factor / 100 }
+//    time { 40.m * params.batch * mem_factor / 100  }
 
     input:
     path bin_dir from ch_bin
@@ -304,8 +305,8 @@ if (params.part == 4){
     tag "${sample_name}"
     echo true
     publishDir "results/", mode: params.mode
-    memory { 5.GB * params.batch * mem_factor / 100 }
-    time { 40.m * params.batch * mem_factor / 100  }
+    // memory { 5.GB * params.batch * mem_factor / 100 }
+    // time { 40.m * params.batch * mem_factor / 100  }
 
     input:
     path rbin_dir from ch_rbin
