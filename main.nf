@@ -27,7 +27,7 @@ def helpMessage() {
       --index         [file] Index in tab format (index_tab.txt)
       --bindir        [path] Path to the directory of all bin files
       --gender        [file] Gender file from part 2
-      --batch         [int]  Batch size for references
+      --batch_size         [int]  Batch size for references
       --samples       [file] Samples to process
 
     Part 4 arguments:
@@ -276,8 +276,8 @@ if (params.part == 3) {
     input:
     path bin_dir from ch_bin
     path index from ch_index
-    path gender from ch_gender
-    val sample_name from ch_sample_names
+    //path gender from ch_gender
+    //val sample_name from ch_sample_names
 
     output:
     path "${params.project}/cor/$sample_name"
@@ -287,12 +287,12 @@ if (params.part == 3) {
     script:
     """
       mkdir -p ${params.project}/cor/ ${params.project}/logr/ ${params.project}/rbin/
-      cnest.py step4 \
+      cnest_dev.py step4 \
         --bindir $bin_dir \
         --indextab $index \
-        --gender $gender \
-        --sample $sample_name \
-        --batch ${params.batch} \
+        --batch ${params.batch_size} \
+        --tlen ${params.target_size} \
+        --spot ${params.start_pod} \
         --cordir ${params.project}/cor/ \
         --logrdir ${params.project}/logr/ \
         --rbindir ${params.project}/rbin/
@@ -332,7 +332,7 @@ if (params.part == 4){
         --cov    $cov_file \
         --sample $sample_name \
         --gender $gender_file \
-        --batch $params.batch
+        --batch $params.batch_size
     """
   }
 }
