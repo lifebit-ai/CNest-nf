@@ -292,7 +292,7 @@ if (params.part == 3) {
         --indextab $index \
         --batch ${params.batch_size} \
         --tlen ${params.target_size} \
-        --spot ${params.start_pod} \
+        --spos ${params.start_pod} \
         --cordir ${params.project}/cor/ \
         --logrdir ${params.project}/logr/ \
         --rbindir ${params.project}/rbin/
