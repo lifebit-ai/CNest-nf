@@ -286,16 +286,14 @@ if (params.part == 3) {
 
     script:
     """
-      mkdir -p ${params.project}/cor/ ${params.project}/logr/ ${params.project}/rbin/
+      mkdir -p ${params.project}/cor/
       cnest_dev.py step4 \
         --bindir $bin_dir \
         --indextab $index \
         --batch ${params.batch_size} \
         --tlen ${params.target_size} \
         --spos ${params.start_pod} \
-        --cordir ${params.project}/cor/ \
-        --logrdir ${params.project}/logr/ \
-        --rbindir ${params.project}/rbin/
+        --cordir ${params.project}/cor/
     """
   }
 }
