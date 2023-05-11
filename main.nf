@@ -280,9 +280,7 @@ if (params.part == 3) {
     //val sample_name from ch_sample_names
 
     output:
-    path "${params.project}/cor/$sample_name"
-    path "${params.project}/logr/$sample_name"
-    path "${params.project}/rbin/$sample_name"
+    path "${params.project}/cor"
 
     script:
     """
