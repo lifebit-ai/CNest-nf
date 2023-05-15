@@ -265,9 +265,22 @@ if (params.part == 2) {
   }
 }
 
+if (params.bindir) ch_bin_files = Channel.fromPath("${params.bindir}/*")
+
+number_of_bin_files = ch_bin_files.count().view().val
+number_of_batches = number_of_bin_files/params.batch_size
+
+Channel
+  .of( 0..number_of_batches-1)
+  .map {
+    (it * params.batch_size) + 1
+  }
+  .set { ch_start_pos }
+// this above channel will produce 1, 11, 21, 31 ... for starting position
+
 if (params.part == 3) {
   process logR_ratio {
-    tag "${sample_name}"
+    tag "start_pos_${start_pos}"
     echo true
     publishDir "results/", mode: params.mode
 //    memory { 1.GB * params.batch * mem_factor / 100 }
@@ -276,11 +289,12 @@ if (params.part == 3) {
     input:
     path bin_dir from ch_bin
     path index from ch_index
+    val(start_pos) from ch_start_pos
     //path gender from ch_gender
     //val sample_name from ch_sample_names
 
     output:
-    path "${params.project}/cor"
+    path "${params.project}/cor/*" into ch_cor_files
 
     script:
     """
@@ -290,7 +304,7 @@ if (params.part == 3) {
         --indextab $index \
         --batch ${params.batch_size} \
         --tlen ${params.target_size} \
-        --spos ${params.start_pod} \
+        --spos ${start_pos} \
         --cordir ${params.project}/cor/
     """
   }
