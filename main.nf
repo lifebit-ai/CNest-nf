@@ -270,13 +270,24 @@ if (params.bindir) ch_bin_files = Channel.fromPath("${params.bindir}/*")
 number_of_bin_files = ch_bin_files.count().view().val
 number_of_batches = number_of_bin_files/params.batch_size
 
-Channel
+if(params.run_first_n_batch_for_test){
+  Channel
+  .of( 0..params.run_first_n_batch_for_test-1)
+  .map {
+    (it * params.batch_size) + 1
+  }
+  .set { ch_start_pos }
+}else{
+  Channel
   .of( 0..number_of_batches-1)
   .map {
     (it * params.batch_size) + 1
   }
   .set { ch_start_pos }
-// this above channel will produce 1, 11, 21, 31 ... for starting position
+  // this above channel will produce 1, 11, 21, 31 ... for starting position
+}
+
+
 
 if (params.part == 3) {
   process logR_ratio {
