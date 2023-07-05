@@ -276,14 +276,14 @@ if(params.run_first_n_batch_for_test){
   .map {
     (it * params.batch_size) + 1
   }
-  .set { ch_start_pos }
+  .into { ch_start_pos_1; ch_start_pos_2 }
 }else{
   Channel
   .of( 0..number_of_batches-1)
   .map {
     (it * params.batch_size) + 1
   }
-  .set { ch_start_pos }
+  .into { ch_start_pos_1; ch_start_pos_2 }
   // this above channel will produce 1, 11, 21, 31 ... for starting position
 }
 
@@ -300,7 +300,7 @@ if (params.part == 3) {
     input:
     path bin_dir from ch_bin
     path index from ch_index
-    val(start_pos) from ch_start_pos
+    val(start_pos) from ch_start_pos_1
     //path gender from ch_gender
     //val sample_name from ch_sample_names
 
@@ -320,6 +320,7 @@ if (params.part == 3) {
         --cordir ${params.project}/cor/
     """
   }
+
   process log2_rbin_gen {
     tag "start_pos_${start_pos}"
     echo true
@@ -329,14 +330,14 @@ if (params.part == 3) {
 
     input:
     path bin_dir from ch_bin
-    path cor_dir from ch_cor_dir
+    path cor_dir from ch_cor_files
     path index from ch_index
-    val(start_pos) from ch_start_pos
+    val(start_pos) from ch_start_pos_2
     path gender from ch_gender
     //val sample_name from ch_sample_names
 
     output:
-    path "${params.project}/cor/*" into ch_cor_files
+    path "${params.project}/rbin/*" into ch_rbindir_files
 
     script:
     """
@@ -348,7 +349,6 @@ if (params.part == 3) {
         --gender $gender \
         --indextab $index \
         --cor ${params.cor} \
-        --skipem ${params.skipem} \
         --batch ${params.batch_size} \
         --tlen ${params.target_size} \
         --spos ${start_pos}
