@@ -306,6 +306,7 @@ if (params.part == 3) {
 
     output:
     path "${params.project}/cor/*" into ch_cor_files
+    path "${params.project}/cor/" into ch_cor_dir
 
     script:
     """
@@ -328,6 +329,7 @@ if (params.part == 3) {
 
     input:
     path bin_dir from ch_bin
+    path cor_dir from ch_cor_dir
     path index from ch_index
     val(start_pos) from ch_start_pos
     path gender from ch_gender
@@ -341,14 +343,15 @@ if (params.part == 3) {
       mkdir -p ${params.project}/rbin/
       cnest_dev.py step5 \
         --bindir $bin_dir \
+        --cordir $cor_dir \
+        --rbindir ${params.project}/rbin/ \
+        --gender $gender \
         --indextab $index \
+        --cor ${params.cor} \
+        --skipem ${params.skipem} \
         --batch ${params.batch_size} \
         --tlen ${params.target_size} \
-        --spos ${start_pos} \
-        --cordir ${params.project}/cor/ \
-        --gender $gender \
-        --skipem $params.skipem \
-        --rbindir ${params.project}/rbin/
+        --spos ${start_pos}
     """
   }
 }
