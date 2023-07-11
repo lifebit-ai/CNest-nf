@@ -290,69 +290,78 @@ if(params.run_first_n_batch_for_test){
 
 
 if (params.part == 3) {
-  process logR_ratio {
-    tag "start_pos_${start_pos}"
-    echo true
-    publishDir "results/", mode: params.mode
-//    memory { 1.GB * params.batch * mem_factor / 100 }
-//    time { 40.m * params.batch * mem_factor / 100  }
+  if (params.step == 4){
+    process logR_ratio {
+      tag "start_pos_${start_pos}"
+      echo true
+      publishDir "results/", mode: params.mode
+  //    memory { 1.GB * params.batch * mem_factor / 100 }
+  //    time { 40.m * params.batch * mem_factor / 100  }
 
-    input:
-    path bin_dir from ch_bin
-    path index from ch_index
-    val(start_pos) from ch_start_pos_1
-    //path gender from ch_gender
-    //val sample_name from ch_sample_names
+      input:
+      path bin_dir from ch_bin
+      path index from ch_index
+      val(start_pos) from ch_start_pos_1
+      //path gender from ch_gender
+      //val sample_name from ch_sample_names
 
-    output:
-    path "${params.project}/cor/*" into ch_cor_files
-    path "${params.project}/cor/" into ch_cor_dir
+      output:
+      path "${params.project}/cor/*" into ch_cor_files
+      //path "${params.project}/cor/" into ch_cor_dir
 
-    script:
-    """
-      mkdir -p ${params.project}/cor/
-      cnest_dev.py step4 \
-        --bindir $bin_dir \
-        --indextab $index \
-        --batch ${params.batch_size} \
-        --tlen ${params.target_size} \
-        --spos ${start_pos} \
-        --cordir ${params.project}/cor/
-    """
+      script:
+      """
+        mkdir -p ${params.project}/cor/
+        cnest_dev.py step4 \
+          --bindir $bin_dir \
+          --indextab $index \
+          --batch ${params.batch_size} \
+          --tlen ${params.target_size} \
+          --spos ${start_pos} \
+          --cordir ${params.project}/cor/
+      """
+    }
   }
 
-  process log2_rbin_gen {
-    tag "start_pos_${start_pos}"
-    echo true
-    publishDir "results/", mode: params.mode
-//    memory { 1.GB * params.batch * mem_factor / 100 }
-//    time { 40.m * params.batch * mem_factor / 100  }
+  if (params.step = 5){
+    if (params.cordir) ch_cor_dir = Channel.fromPath("${params.cordir}")
 
-    input:
-    path bin_dir from ch_bin
-    path cor_dir from ch_cor_files
-    path index from ch_index
-    val(start_pos) from ch_start_pos_2
-    path gender from ch_gender
-    //val sample_name from ch_sample_names
+    process log2_rbin_gen {
+      tag "start_pos_${start_pos}"
+      echo true
+      publishDir "results/", mode: params.mode
+  //    memory { 1.GB * params.batch * mem_factor / 100 }
+  //    time { 40.m * params.batch * mem_factor / 100  }
 
-    output:
-    path "${params.project}/rbin/*" into ch_rbindir_files
+      input:
+      path bin_dir from ch_bin
+      path cor_dir from ch_cor_dir
+      path index from ch_index
+      val(start_pos) from ch_start_pos_2
+      path gender from ch_gender
+      //val sample_name from ch_sample_names
 
-    script:
-    """
-      mkdir -p ${params.project}/rbin/
-      cnest_dev.py step5 \
-        --bindir $bin_dir \
-        --cordir $cor_dir \
-        --rbindir ${params.project}/rbin/ \
-        --gender $gender \
-        --indextab $index \
-        --cor ${params.cor} \
-        --batch ${params.batch_size} \
-        --tlen ${params.target_size} \
-        --spos ${start_pos}
-    """
+      output:
+      path "${params.project}/rbin/*" into ch_rbindir_files
+
+      script:
+      """
+        echo "CPU = $task.cpus"
+        echo "Memory = $task.memory"
+        mkdir -p ${params.project}/rbin/
+        cnest_dev.py step5 \
+          --bindir $bin_dir \
+          --cordir $cor_dir \
+          --rbindir ${params.project}/rbin \
+          --gender $gender \
+          --indextab $index \
+          --cor ${params.cor} \
+          --batch ${params.batch_size} \
+          --tlen ${params.target_size} \
+          --spos ${start_pos} \
+          --skipem
+      """
+    }
   }
 }
 
