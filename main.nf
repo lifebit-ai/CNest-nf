@@ -323,7 +323,7 @@ if (params.part == 3) {
     }
   }
 
-  if (params.step = 5){
+  if (params.step == 5){
     if (params.cordir) ch_cor_dir = Channel.fromPath("${params.cordir}")
 
     process log2_rbin_gen {
