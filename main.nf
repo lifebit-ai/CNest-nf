@@ -337,7 +337,7 @@ if (params.part == 3) {
       path bin_dir from ch_bin
       path cor_dir from ch_cor_dir
       path index from ch_index
-      val(start_pos) from ch_start_pos_2
+      each start_pos from ch_start_pos_2
       path gender from ch_gender
       //val sample_name from ch_sample_names
 
