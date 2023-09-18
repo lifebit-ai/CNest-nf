@@ -359,8 +359,8 @@ if (params.part == 3) {
           --gender $gender \
           --indextab $index \
           --cor ${params.cor} \
-          --batch ${params.target_size} \
-          --tlen ${params.batch_size} \
+          --batch ${params.batch_size} \
+          --tlen ${params.target_size} \
           --spos ${start_pos} \
           --skipem
       """
