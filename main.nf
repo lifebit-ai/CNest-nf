@@ -274,7 +274,7 @@ println "Number of batches to run - "
 println number_of_batches
 
 if(params.start_batch > number_of_batches){
-  log.error "--start_batch $params.start_batch must be less than $number_of_batches for this run."
+  log.error "--start_batch $params.start_batch must be less than or equal to $number_of_batches for this run."
   exit 1
 }
 
