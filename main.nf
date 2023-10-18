@@ -273,9 +273,9 @@ number_of_batches = (int) Math.ceil(number_of_bin_files/params.batch_size)
 println "Number of batches to run - "
 println number_of_batches
 
-if(params.run_first_n_batch_for_test){
+if(params.run_n_batches){
   Channel
-  .of( params.start_batch-1..params.run_first_n_batch_for_test-1)
+  .of( params.start_batch-1..params.run_n_batches-1)
   .map {
     (it * params.batch_size) + 1
   }
