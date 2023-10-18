@@ -275,14 +275,14 @@ println number_of_batches
 
 if(params.run_first_n_batch_for_test){
   Channel
-  .of( params.start_pos..params.run_first_n_batch_for_test-1)
+  .of( params.start_batch-1..params.run_first_n_batch_for_test-1)
   .map {
     (it * params.batch_size) + 1
   }
   .into { ch_start_pos_1; ch_start_pos_2 }
 }else{
   Channel
-  .of( params.start_pos..number_of_batches-1)
+  .of( params.start_batch-1..number_of_batches-1)
   .map {
     (it * params.batch_size) + 1
   }
