@@ -273,16 +273,26 @@ number_of_batches = (int) Math.ceil(number_of_bin_files/params.batch_size)
 println "Number of batches to run - "
 println number_of_batches
 
-if(params.run_first_n_batch_for_test){
+if(params.start_batch > number_of_batches){
+  log.error "--start_batch $params.start_batch must be less than or equal to $number_of_batches for this run."
+  exit 1
+}
+
+if(params.run_until_n_batches && params.run_until_n_batches > number_of_batches ){
+  log.error "--run_until_n_batches $params.run_until_n_batches must be less than or equal to $number_of_batches for this run."
+  exit 1
+}
+
+if(params.run_until_n_batches){
   Channel
-  .of( 0..params.run_first_n_batch_for_test-1)
+  .of( params.start_batch-1..params.run_until_n_batches-1)
   .map {
     (it * params.batch_size) + 1
   }
   .into { ch_start_pos_1; ch_start_pos_2 }
 }else{
   Channel
-  .of( 0..number_of_batches-1)
+  .of( params.start_batch-1..number_of_batches-1)
   .map {
     (it * params.batch_size) + 1
   }
