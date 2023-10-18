@@ -279,7 +279,7 @@ if(params.start_batch > number_of_batches){
 }
 
 if(params.run_until_n_batches && params.run_until_n_batches > number_of_batches ){
-  log.error "--run_until_n_batches $params.run_until_n_batches must be less than $number_of_batches for this run."
+  log.error "--run_until_n_batches $params.run_until_n_batches must be less than or equal to $number_of_batches for this run."
   exit 1
 }
 
