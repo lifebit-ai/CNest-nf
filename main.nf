@@ -265,11 +265,12 @@ if (params.part == 2) {
   }
 }
 
-if (params.bindir) ch_bin_files = Channel.fromPath("${params.bindir}/*")
+if (params.bindir) ch_input_files = Channel.fromPath("${params.bindir}/*")
+if (params.rbindir) ch_input_files = Channel.fromPath("${params.rbindir}/*")
 
 println "Total number of samples in bin directory - "
-number_of_bin_files = ch_bin_files.count().view().val
-number_of_batches = (int) Math.ceil(number_of_bin_files/params.batch_size)
+number_of_input_files = ch_input_files.count().view().val
+number_of_batches = (int) Math.ceil(number_of_input_files/params.batch_size)
 println "Number of batches to run - "
 println number_of_batches
 
