@@ -273,54 +273,108 @@ number_of_batches = (int) Math.ceil(number_of_bin_files/params.batch_size)
 println "Number of batches to run - "
 println number_of_batches
 
-if(params.run_first_n_batch_for_test){
+if(params.start_batch > number_of_batches){
+  log.error "--start_batch $params.start_batch must be less than or equal to $number_of_batches for this run."
+  exit 1
+}
+
+if(params.run_until_n_batches && params.run_until_n_batches > number_of_batches ){
+  log.error "--run_until_n_batches $params.run_until_n_batches must be less than or equal to $number_of_batches for this run."
+  exit 1
+}
+
+if(params.run_until_n_batches){
   Channel
-  .of( 0..params.run_first_n_batch_for_test-1)
+  .of( params.start_batch-1..params.run_until_n_batches-1)
   .map {
     (it * params.batch_size) + 1
   }
-  .set { ch_start_pos }
+  .into { ch_start_pos_1; ch_start_pos_2 }
 }else{
   Channel
-  .of( 0..number_of_batches-1)
+  .of( params.start_batch-1..number_of_batches-1)
   .map {
     (it * params.batch_size) + 1
   }
-  .set { ch_start_pos }
+  .into { ch_start_pos_1; ch_start_pos_2 }
   // this above channel will produce 1, 11, 21, 31 ... for starting position
 }
 
 
 
 if (params.part == 3) {
-  process logR_ratio {
-    tag "start_pos_${start_pos}"
-    echo true
-    publishDir "results/", mode: params.mode
-//    memory { 1.GB * params.batch * mem_factor / 100 }
-//    time { 40.m * params.batch * mem_factor / 100  }
+  if (params.step == 4){
+    process logR_ratio {
+      tag "start_pos_${start_pos}"
+      echo true
+      publishDir "results/", mode: params.mode
+  //    memory { 1.GB * params.batch * mem_factor / 100 }
+  //    time { 40.m * params.batch * mem_factor / 100  }
 
-    input:
-    path bin_dir from ch_bin
-    path index from ch_index
-    val(start_pos) from ch_start_pos
-    //path gender from ch_gender
-    //val sample_name from ch_sample_names
+      input:
+      path bin_dir from ch_bin
+      path index from ch_index
+      val(start_pos) from ch_start_pos_1
+      //path gender from ch_gender
+      //val sample_name from ch_sample_names
 
-    output:
-    path "${params.project}/cor/*" into ch_cor_files
+      output:
+      path "${params.project}/cor/*" into ch_cor_files
+      //path "${params.project}/cor/" into ch_cor_dir
 
-    script:
-    """
-      mkdir -p ${params.project}/cor/
-      cnest_dev.py step4 \
-        --bindir $bin_dir \
-        --indextab $index \
-        --batch ${params.batch_size} \
-        --tlen ${params.target_size} \
-        --spos ${start_pos} \
-        --cordir ${params.project}/cor/
-    """
+      script:
+      """
+        mkdir -p ${params.project}/cor/
+        cnest_dev.py step4 \
+          --bindir $bin_dir \
+          --indextab $index \
+          --batch ${params.batch_size} \
+          --tlen ${params.target_size} \
+          --spos ${start_pos} \
+          --cordir ${params.project}/cor/
+      """
+    }
+  }
+
+  if (params.step == 5){
+    if (params.cordir) ch_cor_dir = Channel.fromPath("${params.cordir}")
+
+    process log2_rbin_gen {
+      tag "start_pos_${start_pos}"
+      echo true
+      publishDir "results/", mode: params.mode
+  //    memory { 1.GB * params.batch * mem_factor / 100 }
+  //    time { 40.m * params.batch * mem_factor / 100  }
+
+      input:
+      path bin_dir from ch_bin
+      path cor_dir from ch_cor_dir
+      path index from ch_index
+      each start_pos from ch_start_pos_2
+      path gender from ch_gender
+      //val sample_name from ch_sample_names
+
+      output:
+      path "${params.project}/rbin/*" into ch_rbindir_files
+
+      script:
+      """
+        echo "CPU = $task.cpus"
+        echo "Memory = $task.memory"
+        mkdir -p ${params.project}/rbin/
+        cnest_dev.py step5 \
+          --bindir $bin_dir \
+          --cordir $cor_dir \
+          --rbindir ${params.project}/rbin \
+          --gender $gender \
+          --indextab $index \
+          --cor ${params.cor} \
+          --batch ${params.batch_size} \
+          --tlen ${params.target_size} \
+          --spos ${start_pos} \
+          --skipem
+      """
+    }
   }
 }
 
