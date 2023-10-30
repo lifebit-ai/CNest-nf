@@ -384,7 +384,7 @@ if (params.step == 6){
   if (params.rbindir) ch_rbindir_dir = Channel.fromPath("${params.rbindir}")
 
   process hmm_call {
-    tag "${sample_name}"
+    tag "start_pos_${start_pos}"
     echo true
     publishDir "results/", mode: params.mode
     // memory { 5.GB * params.batch * mem_factor / 100 }
@@ -396,6 +396,7 @@ if (params.step == 6){
     path index from ch_index
     path gender_file from ch_gender
     path cov_file from ch_cov
+    each start_pos from ch_start_pos_2
 
     output:
     path "${params.project}/cnv/*"
@@ -403,7 +404,7 @@ if (params.step == 6){
     script:
     """
     mkdir -p ${params.project}/cnv/
-    cnest.py step6 \
+    cnest_dev.py step6 \
       --rbindir $rbin_dir \
       --cordir $cor_dir \
       --cnvdir ${params.project}/cnv/ \
