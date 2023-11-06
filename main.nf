@@ -288,14 +288,14 @@ if(params.run_until_n_batches){
   Channel
   .of( params.start_batch-1..params.run_until_n_batches-1)
   .map {
-    (it * params.batch_size) + 1
+    (it * params.target_size) + 1
   }
   .into { ch_start_pos_1; ch_start_pos_2 }
 }else{
   Channel
   .of( params.start_batch-1..number_of_batches-1)
   .map {
-    (it * params.batch_size) + 1
+    (it * params.target_size) + 1
   }
   .into { ch_start_pos_1; ch_start_pos_2 }
   // this above channel will produce 1, 11, 21, 31 ... for starting position
