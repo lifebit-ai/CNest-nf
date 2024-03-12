@@ -265,11 +265,12 @@ if (params.part == 2) {
   }
 }
 
-if (params.bindir) ch_bin_files = Channel.fromPath("${params.bindir}/*")
+if (params.bindir) ch_input_files = Channel.fromPath("${params.bindir}/*")
+if (params.rbindir) ch_input_files = Channel.fromPath("${params.rbindir}/*")
 
 println "Total number of samples in bin directory - "
-number_of_bin_files = ch_bin_files.count().view().val
-number_of_batches = (int) Math.ceil(number_of_bin_files/params.batch_size)
+number_of_input_files = ch_input_files.count().view().val
+number_of_batches = (int) Math.ceil(number_of_input_files/params.target_size)
 println "Number of batches to run - "
 println number_of_batches
 
@@ -287,14 +288,14 @@ if(params.run_until_n_batches){
   Channel
   .of( params.start_batch-1..params.run_until_n_batches-1)
   .map {
-    (it * params.batch_size) + 1
+    (it * params.target_size) + 1
   }
   .into { ch_start_pos_1; ch_start_pos_2 }
 }else{
   Channel
   .of( params.start_batch-1..number_of_batches-1)
   .map {
-    (it * params.batch_size) + 1
+    (it * params.target_size) + 1
   }
   .into { ch_start_pos_1; ch_start_pos_2 }
   // this above channel will produce 1, 11, 21, 31 ... for starting position
@@ -378,39 +379,44 @@ if (params.part == 3) {
   }
 }
 
-if (params.part == 4){
+if (params.step == 6){
+  if (params.cordir) ch_cor_dir = Channel.fromPath("${params.cordir}")
+  if (params.rbindir) ch_rbindir_dir = Channel.fromPath("${params.rbindir}")
+
   process hmm_call {
-    tag "${sample_name}"
+    tag "start_pos_${start_pos}"
     echo true
     publishDir "results/", mode: params.mode
     // memory { 5.GB * params.batch * mem_factor / 100 }
     // time { 40.m * params.batch * mem_factor / 100  }
 
     input:
-    path rbin_dir from ch_rbin
-    path cor_dir from ch_cor
+    path rbin_dir from ch_rbindir_dir
+    path cor_dir from ch_cor_dir
     path index from ch_index
     path gender_file from ch_gender
     path cov_file from ch_cov
-    val sample_name from ch_sample_names
+    each start_pos from ch_start_pos_2
 
     output:
-    path "${params.project}/cnv/${sample_name}/${sample_name}_mixed_calls.txt"
-    path "${params.project}/cnv/${sample_name}/${sample_name}_mixed_states.txt"
+    path "${params.project}/cnv/*"
 
     script:
     """
-      echo "Processing sample $sample_name"
-      mkdir -p ${params.project}/cnv/
-      cnest.py step5 \
-        --indextab $index \
-        --rbindir $rbin_dir \
-        --cordir $cor_dir \
-        --cnvdir ${params.project}/cnv/ \
-        --cov    $cov_file \
-        --sample $sample_name \
-        --gender $gender_file \
-        --batch $params.batch_size
+    mkdir -p ${params.project}/cnv/
+    cnest_dev.py step6 \
+      --rbindir $rbin_dir \
+      --cordir $cor_dir \
+      --cnvdir ${params.project}/cnv/ \
+      --gender $gender_file \
+      --indextab $index \
+      --cov $cov_file \
+      --covc ${params.covc} \
+      --cor ${params.cor} \
+      --batch ${params.batch_size} \
+      --tlen ${params.target_size}\
+      --spos ${start_pos} \
+      --skipem
     """
   }
 }
