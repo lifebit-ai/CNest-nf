@@ -52,7 +52,7 @@ nextflow run -with-report p3_report.html -with-trace p3_trace -profile $executor
     --bindir ./results/$project_name/bin/ \
     --index ./results/$project_name/index_tab.txt \
     --gender ./results/gender_classification.txt \
-    --batch $batch_size
+    --batch_size $batch_size
 
 # Part 4 : HMM call
 nextflow run -with-report p4_report.html -with-trace p4_trace -profile $executor \
@@ -64,7 +64,7 @@ nextflow run -with-report p4_report.html -with-trace p4_trace -profile $executor
     --index ./results/$project_name/index_tab.txt \
     --gender ./results/gender_classification.txt \
     --cov ./results/mean_coverage.txt \
-    --batch $batch_size
+    --batch_size $batch_size
 ```
 
 ## Run with AWS
@@ -85,6 +85,6 @@ nextflow run smshuai/CNest-nf \
     --bindir $bin_dir \
     --index index_tab.txt \
     --gender gender_classification.txt \
-    --batch $batch_size
+    --batch_size $batch_size
 
 ```
