@@ -265,40 +265,42 @@ if (params.part == 2) {
   }
 }
 
-if (params.bindir) ch_input_files = Channel.fromPath("${params.bindir}/*")
-if (params.rbindir) ch_input_files = Channel.fromPath("${params.rbindir}/*")
+if (params.part == 3) {
+  if (params.bindir) ch_input_files = Channel.fromPath("${params.bindir}/*")
+  if (params.rbindir) ch_input_files = Channel.fromPath("${params.rbindir}/*")
 
-println "Total number of samples in bin directory - "
-number_of_input_files = ch_input_files.count().view().val
-number_of_batches = (int) Math.ceil(number_of_input_files/params.target_size)
-println "Number of batches to run - "
-println number_of_batches
+  println "Total number of samples in bin directory - "
+  number_of_input_files = ch_input_files.count().view().val
+  number_of_batches = (int) Math.ceil(number_of_input_files/params.target_size)
+  println "Number of batches to run - "
+  println number_of_batches
 
-if(params.start_batch > number_of_batches){
-  log.error "--start_batch $params.start_batch must be less than or equal to $number_of_batches for this run."
-  exit 1
-}
-
-if(params.run_until_n_batches && params.run_until_n_batches > number_of_batches ){
-  log.error "--run_until_n_batches $params.run_until_n_batches must be less than or equal to $number_of_batches for this run."
-  exit 1
-}
-
-if(params.run_until_n_batches){
-  Channel
-  .of( params.start_batch-1..params.run_until_n_batches-1)
-  .map {
-    (it * params.target_size) + 1
+  if(params.start_batch > number_of_batches){
+    log.error "--start_batch $params.start_batch must be less than or equal to $number_of_batches for this run."
+    exit 1
   }
-  .into { ch_start_pos_1; ch_start_pos_2 }
-}else{
-  Channel
-  .of( params.start_batch-1..number_of_batches-1)
-  .map {
-    (it * params.target_size) + 1
+
+  if(params.run_until_n_batches && params.run_until_n_batches > number_of_batches ){
+    log.error "--run_until_n_batches $params.run_until_n_batches must be less than or equal to $number_of_batches for this run."
+    exit 1
   }
-  .into { ch_start_pos_1; ch_start_pos_2 }
-  // this above channel will produce 1, 11, 21, 31 ... for starting position
+
+  if(params.run_until_n_batches){
+    Channel
+    .of( params.start_batch-1..params.run_until_n_batches-1)
+    .map {
+      (it * params.target_size) + 1
+    }
+    .into { ch_start_pos_1; ch_start_pos_2 }
+  }else{
+    Channel
+    .of( params.start_batch-1..number_of_batches-1)
+    .map {
+      (it * params.target_size) + 1
+    }
+    .into { ch_start_pos_1; ch_start_pos_2 }
+    // this above channel will produce 1, 11, 21, 31 ... for starting position
+  }
 }
 
 
