@@ -162,7 +162,7 @@ if (params.binlist) {
 ================================================================================
 */
 if (params.part == 0) {
-  ch_bedgz = Channel.value(file("$baseDir/data/hg38.1kb.baits.bed.gz"))
+  ch_bedgz = Channel.value(file(params.bedgz))
 
   process step0 {
     tag "${params.project}"
