@@ -202,6 +202,8 @@ if (params.step =~ 3) {
 if (params.step =~ 4 || params.step =~ 5 || params.step =~ 6) {
   if (params.bindir) {
     ch_input_files = Channel.fromPath("${params.bindir}/*")
+  } else if (params.rbindir) {
+    ch_input_files = Channel.fromPath("${params.rbindir}/*")
   } else if (params.step =~ 2) {
     def bin_path = ch_bin.view().val
     ch_input_files = Channel.fromPath("${bin_path}/*")
@@ -209,7 +211,6 @@ if (params.step =~ 4 || params.step =~ 5 || params.step =~ 6) {
     log.error "Please provide --bindir or run step 2 first"
     exit 1
   }
-  if (params.rbindir) ch_input_files = Channel.fromPath("${params.rbindir}/*")
 
   println "Total number of samples in bin directory - "
   number_of_input_files = ch_input_files.count().view().val
