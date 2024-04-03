@@ -343,7 +343,7 @@ if (params.part == 3) {
     if (params.cordir) ch_cor_dir = Channel.fromPath("${params.cordir}")
 
     process log2_rbin_gen {
-      tag "start_pos_${start_pos}"
+      tag "start_pos_${start_pos}_target_size_${target_size}"
       echo true
       publishDir "results/", mode: params.mode
   //    memory { 1.GB * params.batch * mem_factor / 100 }
@@ -361,6 +361,15 @@ if (params.part == 3) {
       path "${params.project}/rbin/*" into ch_rbindir_files
 
       script:
+      // for odd number of samples in a batch change target_size and batch_size
+      def num_samples_in_current_batch =  number_of_input_files - start_pos
+      if (num_samples_in_current_batch < params.target_size){
+        batch_size = num_samples_in_current_batch + 1
+        target_size = num_samples_in_current_batch + 1
+      }else{
+        batch_size = params.batch_size
+        target_size = params.target_size
+      }
       """
         echo "CPU = $task.cpus"
         echo "Memory = $task.memory"
@@ -372,8 +381,8 @@ if (params.part == 3) {
           --gender $gender \
           --indextab $index \
           --cor ${params.cor} \
-          --batch ${params.batch_size} \
-          --tlen ${params.target_size} \
+          --batch $batch_size \
+          --tlen $target_size \
           --spos ${start_pos} \
           --skipem
       """
