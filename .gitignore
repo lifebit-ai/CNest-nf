@@ -1,4 +1,5 @@
-results/
+results*/
 .nextflow/
 work/
 *.log*
+subset*

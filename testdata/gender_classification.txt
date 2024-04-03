@@ -1,0 +1,8 @@
+sample	gender
+NA06985	female
+NA07346	female
+NA06986 male
+NA11993	female
+NA06994 male
+NA12717	female
+NA12750 male

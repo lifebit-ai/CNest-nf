@@ -1,0 +1,8 @@
+name,cram,crai
+NA07346,s3://lifebit-featured-datasets/pipelines/cnest-nf/1kgp_subset/NA07346.final.subset.cram,s3://lifebit-featured-datasets/pipelines/cnest-nf/1kgp_subset/NA07346.final.subset.cram.crai
+NA11993,s3://lifebit-featured-datasets/pipelines/cnest-nf/1kgp_subset/NA11993.final.subset.cram,s3://lifebit-featured-datasets/pipelines/cnest-nf/1kgp_subset/NA11993.final.subset.cram.crai
+NA06985,s3://lifebit-featured-datasets/pipelines/cnest-nf/1kgp_subset/NA06985.final.subset.cram,s3://lifebit-featured-datasets/pipelines/cnest-nf/1kgp_subset/NA06985.final.subset.cram.crai
+NA06986,s3://lifebit-featured-datasets/pipelines/cnest-nf/1kgp_subset/NA06986.final.subset.cram,s3://lifebit-featured-datasets/pipelines/cnest-nf/1kgp_subset/NA06986.final.subset.cram.crai
+NA06994,s3://lifebit-featured-datasets/pipelines/cnest-nf/1kgp_subset/NA06994.final.subset.cram,s3://lifebit-featured-datasets/pipelines/cnest-nf/1kgp_subset/NA06994.final.subset.cram.crai
+NA12717,s3://lifebit-featured-datasets/pipelines/cnest-nf/1kgp_subset/NA12717.final.subset.cram,s3://lifebit-featured-datasets/pipelines/cnest-nf/1kgp_subset/NA12717.final.subset.cram.crai
+NA12750,s3://lifebit-featured-datasets/pipelines/cnest-nf/1kgp_subset/NA12750.final.subset.cram,s3://lifebit-featured-datasets/pipelines/cnest-nf/1kgp_subset/NA12750.final.subset.cram.crai
