@@ -1,36 +1,35 @@
 #!/usr/bin/env nextflow
 
-// Re-usable componext for adding a helpful help message in our Nextflow script
 def helpMessage() {
     log.info"""
     Usage:
     The typical command for running the pipeline is as follows:
 
-    nextflow run main.nf --project test --part 4
+    nextflow run main.nf --project test --step 4
 
     Mandatory arguments:
       --project       [string] Name of the project
-      --part          [int] Part of the workflow to run. One of [1, 2, 3, 4]
+      --step          [int] step of the workflow to run. One of [1, 2, 3, 4]
 
 
-    Part 1 arguments:
+    step 1 arguments:
       --ref           [file] Reference FASTA
       --indexb        [file] Index in BED format for fast counting
       --design        [file] A CSV file with header and three columns (name,cram,crai)
 
-    Part 2 arguments:
+    step 2 arguments:
       --index         [file] Index in tab format (index_tab.txt)
       --bindir        [path] Path to the directory of all bin files
       --binlist       [file] A txt file with paths to all bin files (one per row)
 
-    Part 3 arguments:
+    step 3 arguments:
       --index         [file] Index in tab format (index_tab.txt)
       --bindir        [path] Path to the directory of all bin files
-      --gender        [file] Gender file from part 2
+      --gender        [file] Gender file from step 2
       --batch_size         [int]  Batch size for references
       --samples       [file] Samples to process
 
-    Part 4 arguments:
+    step 4 arguments:
       --rbindir
       --cordir
       --index
@@ -130,38 +129,10 @@ if (params.test && (params.bindir || params.binlist || params.rbindir || params.
 
 /*
 ================================================================================
-                                File staging
+                                Steps
 ================================================================================
 */
-if (params.binlist) {
-  process stage_bins {
-      echo true
-
-      input:
-        path bins from ch_bins
-
-      output:
-        file ("bin") into ch_bin
-
-      shell:
-      '''
-      ls ./ > all_files
-      mkdir -p bin
-      cat ./all_files | while read f
-      do
-          mv $f bin/
-      done
-      rm bin/all_files
-      '''
-  }
-}
-
-/*
-================================================================================
-                                Main parts
-================================================================================
-*/
-if (params.part == 0) {
+if (params.step == 1) {
   ch_bedgz = Channel.value(file(params.bedgz))
 
   process step0 {
@@ -209,9 +180,9 @@ if (params.part == 0) {
   }
 }
 
-if (params.part == 1) {
+if (params.step == 2) {
   process step2 {
-    tag "id:${name}-file:${file_path}-index:${index_path}"
+    tag "sample:${name}"
     publishDir "results/", mode: params.mode
     echo true
 
@@ -237,7 +208,7 @@ if (params.part == 1) {
   }
 }
 
-if (params.part == 2) {
+if (params.step == 3) {
 
   process gender_qc {
     echo true
@@ -265,7 +236,7 @@ if (params.part == 2) {
   }
 }
 
-if (params.part == 3) {
+if (params.step == 4 || params.step == 5 || params.step == 6) {
   if (params.bindir) ch_input_files = Channel.fromPath("${params.bindir}/*")
   if (params.rbindir) ch_input_files = Channel.fromPath("${params.rbindir}/*")
 
@@ -303,90 +274,91 @@ if (params.part == 3) {
   }
 }
 
+if (params.step == 4){
+  process logR_ratio {
+    tag "start_pos_${start_pos}"
+    echo true
+    publishDir "results/", mode: params.mode
 
+    input:
+    path bin_dir from ch_bin
+    path index from ch_index
+    val(start_pos) from ch_start_pos_1
+    //path gender from ch_gender
+    //val sample_name from ch_sample_names
 
-if (params.part == 3) {
-  if (params.step == 4){
-    process logR_ratio {
-      tag "start_pos_${start_pos}"
-      echo true
-      publishDir "results/", mode: params.mode
-  //    memory { 1.GB * params.batch * mem_factor / 100 }
-  //    time { 40.m * params.batch * mem_factor / 100  }
+    output:
+    path "${params.project}/cor/*" into ch_cor_files
+    //path "${params.project}/cor/" into ch_cor_dir
 
-      input:
-      path bin_dir from ch_bin
-      path index from ch_index
-      val(start_pos) from ch_start_pos_1
-      //path gender from ch_gender
-      //val sample_name from ch_sample_names
-
-      output:
-      path "${params.project}/cor/*" into ch_cor_files
-      //path "${params.project}/cor/" into ch_cor_dir
-
-      script:
-      """
-        mkdir -p ${params.project}/cor/
-        cnest_dev.py step4 \
-          --bindir $bin_dir \
-          --indextab $index \
-          --batch ${params.batch_size} \
-          --tlen ${params.target_size} \
-          --spos ${start_pos} \
-          --cordir ${params.project}/cor/
-      """
+    script:
+    // for odd number of samples in a batch change target_size and batch_size
+    def num_samples_in_current_batch =  number_of_input_files - start_pos
+    if (num_samples_in_current_batch < params.target_size){
+      batch_size = num_samples_in_current_batch + 1
+      target_size = num_samples_in_current_batch + 1
+    }else{
+      batch_size = params.batch_size
+      target_size = params.target_size
     }
+    """
+      mkdir -p ${params.project}/cor/
+      cnest_dev.py step4 \
+        --bindir $bin_dir \
+        --indextab $index \
+        --batch ${params.batch_size} \
+        --tlen ${params.target_size} \
+        --spos ${start_pos} \
+        --cordir ${params.project}/cor/
+    """
   }
+}
 
-  if (params.step == 5){
-    if (params.cordir) ch_cor_dir = Channel.fromPath("${params.cordir}")
+if (params.step == 5){
+  if (params.cordir) ch_cor_dir = Channel.fromPath("${params.cordir}")
 
-    process log2_rbin_gen {
-      tag "start_pos_${start_pos}_target_size_${target_size}"
-      echo true
-      publishDir "results/", mode: params.mode
-  //    memory { 1.GB * params.batch * mem_factor / 100 }
-  //    time { 40.m * params.batch * mem_factor / 100  }
+  process log2_rbin_gen {
+    tag "start_pos_${start_pos}_target_size_${target_size}"
+    echo true
+    publishDir "results/", mode: params.mode
 
-      input:
-      path bin_dir from ch_bin
-      path cor_dir from ch_cor_dir
-      path index from ch_index
-      each start_pos from ch_start_pos_2
-      path gender from ch_gender
-      //val sample_name from ch_sample_names
+    input:
+    path bin_dir from ch_bin
+    path cor_dir from ch_cor_dir
+    path index from ch_index
+    each start_pos from ch_start_pos_2
+    path gender from ch_gender
+    //val sample_name from ch_sample_names
 
-      output:
-      path "${params.project}/rbin/*" into ch_rbindir_files
+    output:
+    path "${params.project}/rbin/*" into ch_rbindir_files
 
-      script:
-      // for odd number of samples in a batch change target_size and batch_size
-      def num_samples_in_current_batch =  number_of_input_files - start_pos
-      if (num_samples_in_current_batch < params.target_size){
-        batch_size = num_samples_in_current_batch + 1
-        target_size = num_samples_in_current_batch + 1
-      }else{
-        batch_size = params.batch_size
-        target_size = params.target_size
-      }
-      """
-        echo "CPU = $task.cpus"
-        echo "Memory = $task.memory"
-        mkdir -p ${params.project}/rbin/
-        cnest_dev.py step5 \
-          --bindir $bin_dir \
-          --cordir $cor_dir \
-          --rbindir ${params.project}/rbin \
-          --gender $gender \
-          --indextab $index \
-          --cor ${params.cor} \
-          --batch $batch_size \
-          --tlen $target_size \
-          --spos ${start_pos} \
-          --skipem
-      """
+    script:
+    // for odd number of samples in a batch change target_size and batch_size
+    def num_samples_in_current_batch =  number_of_input_files - start_pos
+    if (num_samples_in_current_batch < params.target_size){
+      batch_size = num_samples_in_current_batch + 1
+      target_size = num_samples_in_current_batch + 1
+    }else{
+      batch_size = params.batch_size
+      target_size = params.target_size
     }
+    """
+      echo "CPU = $task.cpus"
+      echo "Memory = $task.memory"
+      mkdir -p ${params.project}/rbin/
+      cnest_dev.py step5 \
+        --bindir $bin_dir \
+        --cordir $cor_dir \
+        --rbindir ${params.project}/rbin \
+        --gender $gender \
+        --indextab $index \
+        --cor ${params.cor} \
+        --batch $batch_size \
+        --tlen $target_size \
+        --spos ${start_pos} \
+        --skipem
+    """
   }
 }
 
