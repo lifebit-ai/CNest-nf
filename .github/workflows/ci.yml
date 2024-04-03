@@ -25,7 +25,7 @@ jobs:
           export NXF_VER=${{ matrix.nxf_ver }}
           wget -qO- get.nextflow.io | bash
           sudo mv nextflow /usr/local/bin/
-      - name: Basic workflow tests in GATK mode
+      - name: Run workflow
         run: |
           nextflow run ${GITHUB_WORKSPACE} -profile test,standard
   
