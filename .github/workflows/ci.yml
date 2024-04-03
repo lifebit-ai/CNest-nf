@@ -1,0 +1,31 @@
+name: CI test
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+      - fixes-for-e2e-test # todo: remove
+  pull_request:
+    types: [review_requested, ready_for_review]
+    branches:
+      - main
+      - dev
+  workflow_dispatch:
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        nxf_ver: ['21.04.1', '22.10.4']
+    steps:
+      - uses: actions/checkout@v3.0.1
+      - name: Install Nextflow
+        run: |
+          export NXF_VER=${{ matrix.nxf_ver }}
+          wget -qO- get.nextflow.io | bash
+          sudo mv nextflow /usr/local/bin/
+      - name: Basic workflow tests in GATK mode
+        run: |
+          nextflow run ${GITHUB_WORKSPACE} -profile test,standard
+  
