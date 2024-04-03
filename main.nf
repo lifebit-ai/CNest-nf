@@ -413,6 +413,15 @@ if (params.step == 6){
     path "${params.project}/cnv/*"
 
     script:
+    // for odd number of samples in a batch change target_size and batch_size
+    def num_samples_in_current_batch =  number_of_input_files - start_pos
+    if (num_samples_in_current_batch < params.target_size){
+      batch_size = num_samples_in_current_batch + 1
+      target_size = num_samples_in_current_batch + 1
+    }else{
+      batch_size = params.batch_size
+      target_size = params.target_size
+    }
     """
     mkdir -p ${params.project}/cnv/
     cnest_dev.py step6 \
@@ -424,8 +433,8 @@ if (params.step == 6){
       --cov $cov_file \
       --covc ${params.covc} \
       --cor ${params.cor} \
-      --batch ${params.batch_size} \
-      --tlen ${params.target_size}\
+      --batch $batch_size \
+      --tlen $target_size \
       --spos ${start_pos} \
       --skipem
     """
