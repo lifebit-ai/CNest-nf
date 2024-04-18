@@ -119,10 +119,13 @@ if (params.step =~ 1) {
     path "${params.project}/index_tab.txt" into ch_index_tab
     path "${params.project}/index.txt" into ch_index
     path "${params.project}/index.bed" into ch_index_bed
+    path "${params.project}/chr_list.txt" into ch_chr_lits_file
 
     script:
     """
     cnest.py step1 --project ${params.project} --bed ${bed}
+
+    cut -f1 ${params.project}/index_tab.txt | uniq > ${params.project}/chr_list.txt
     """
   }
 }
@@ -414,6 +417,64 @@ if (params.step =~ 6){
       --tlen $target_size \
       --spos ${start_pos} \
       --skipem
+    """
+  }
+}
+
+if (params.step =~ 7){
+  if (params.rbindir) ch_rbin_dir = Channel.fromPath("${params.rbindir}")
+
+  process step_7_samplefile_gen {
+    //echo true
+    publishDir "results/", mode: params.mode
+
+    input:
+    path rbin_dir from ch_rbin_dir
+
+    output:
+    path "samplefile.txt" into ch_samplefile
+
+    script:
+    """
+    cnest_dev.py step7 \
+      --samplefile samplefile.txt \
+      --rbindir $rbin_dir
+    """
+  }
+}
+
+ch_chr_lits_file
+    .map { it.text.split('\n').collect { it.toInteger() } }
+    .set { ch_chr_lits }
+
+if (params.step =~ 8){
+  if (params.rbindir) ch_rbin_dir = Channel.fromPath("${params.rbindir}")
+
+  process step_8_cbin_gen {
+    tag "chr: ${chr}"
+    //echo true
+    publishDir "results/", mode: params.mode
+
+    input:
+    path samplefile from ch_samplefile
+    path rbin_dir from ch_rbin_dir
+    path index from ch_index_tab
+    each chr from ch_chr_lits
+
+    output:
+    path "${params.project}/cbin/*"
+
+    script:
+    """
+    mkdir -p ${params.project}/cbin/
+    cnest_dev.py step8 \
+      --samplefile $samplefile \
+      --cnfile_dir ${params.project}/cbin/ \
+      --cnfile_name "cfnfile" \
+      --chr_n $chr \
+      --rbin_dir $rbin_dir \
+      --indextab $index \
+      --chunk_size ${params.target_size}
     """
   }
 }
