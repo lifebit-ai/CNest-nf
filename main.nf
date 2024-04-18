@@ -154,6 +154,7 @@ if (params.step =~ 2) {
       """
   }
   process make_bin_dir {
+    publishDir "results/", mode: params.mode
 
     input:
     path sample_bin_files from ch_bin_sample.collect()
