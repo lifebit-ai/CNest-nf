@@ -119,13 +119,10 @@ if (params.step =~ 1) {
     path "${params.project}/index_tab.txt" into ch_index_tab
     path "${params.project}/index.txt" into ch_index
     path "${params.project}/index.bed" into ch_index_bed
-    path "${params.project}/chr_list.txt" into ch_chr_lits_file
 
     script:
     """
     cnest.py step1 --project ${params.project} --bed ${bed}
-
-    cut -f1 ${params.project}/index_tab.txt | uniq > ${params.project}/chr_list.txt
     """
   }
 }
@@ -425,6 +422,7 @@ if (params.step =~ 7){
   if (params.rbindir) ch_rbin_dir = Channel.fromPath("${params.rbindir}")
 
   process step_7_samplefile_gen {
+    label 'new_steps'
     //echo true
     publishDir "results/", mode: params.mode
 
@@ -443,15 +441,33 @@ if (params.step =~ 7){
   }
 }
 
-ch_chr_lits_file
+if (params.step =~ 8){
+  if (params.rbindir) ch_rbin_dir = Channel.fromPath("${params.rbindir}")
+  if (params.samplefile) ch_samplefile = Channel.fromPath("${params.samplefile}")
+
+  process get_chr {
+    publishDir "results/${params.project}", mode: params.mode
+    label 'new_steps'
+
+    input:
+    path index from ch_index_tab
+
+    output:
+    path "chr_list.txt" into ch_chr_lits_file
+
+    script:
+    """
+    cut -f1 $index | uniq > chr_list.txt
+    """
+  }
+
+  ch_chr_lits_file
     .map { it.text.split('\n').collect { it.toInteger() } }
     .set { ch_chr_lits }
 
-if (params.step =~ 8){
-  if (params.rbindir) ch_rbin_dir = Channel.fromPath("${params.rbindir}")
-
   process step_8_cbin_gen {
     tag "chr: ${chr}"
+    label 'new_steps'
     //echo true
     publishDir "results/", mode: params.mode
 
