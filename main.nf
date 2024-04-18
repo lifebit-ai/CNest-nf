@@ -207,7 +207,9 @@ if (params.step =~ 4 || params.step =~ 5 || params.step =~ 6) {
     ch_input_files = Channel.fromPath("${params.rbindir}/*")
   } else if (params.step =~ 2) {
     def bin_path = ch_bin.view().val
-    ch_input_files = Channel.fromPath("${bin_path}/*")
+    Channel.fromPath("${bin_path}/*")
+      .into {ch_input_files; ch_input_files_2}
+    ch_input_files_2.view()
   } else {
     log.error "Please provide --bindir or run step 2 first"
     exit 1
