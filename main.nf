@@ -207,7 +207,7 @@ if (params.step =~ 4 || params.step =~ 5 || params.step =~ 6) {
     ch_input_files = Channel.fromPath("${params.rbindir}/*")
   } else if (params.step =~ 2) {
     def bin_path = ch_bin.view().val
-    println "DEBUG: working directory - ${workflow.workDir}"
+    println "DEBUG: working directory - ${workflow.workDir.toUriString()}"
     println "DEBUG: bin path - ${bin_path}"
     if (workflow.workDir =~ "s3:/"){
       println "DEBUG: bin path in case of s3 - s3:/${bin_path}/"
