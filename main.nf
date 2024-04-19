@@ -206,11 +206,11 @@ if (params.step =~ 4 || params.step =~ 5 || params.step =~ 6) {
   } else if (params.rbindir) {
     ch_input_files = Channel.fromPath("${params.rbindir}/*")
   } else if (params.step =~ 2) {
+    println "DEBUG-INFO: bin path - "
     def bin_path = ch_bin.view().val
-    println "DEBUG: working directory - ${workflow.workDir.toUriString()}"
-    println "DEBUG: bin path - ${bin_path}"
-    if (workflow.workDir =~ "s3:/"){
-      println "DEBUG: bin path in case of s3 - s3:/${bin_path}/"
+    println "DEBUG-INFO: working directory - ${workflow.workDir.toUriString()}"
+    if (workflow.workDir.toUriString() =~ "s3:/"){
+      println "DEBUG-INFO: bin path in case of s3 - s3:/${bin_path}/"
       Channel.fromPath("s3:/${bin_path}/*")
         .set {ch_input_files}
     }else{
@@ -222,10 +222,10 @@ if (params.step =~ 4 || params.step =~ 5 || params.step =~ 6) {
     exit 1
   }
 
-  println "Total number of samples in bin directory - "
+  println "DEBUG-INFO: Total number of samples in bin directory - "
   number_of_input_files = ch_input_files.count().view().val
   number_of_batches = (int) Math.ceil(number_of_input_files/params.target_size)
-  println "Number of batches to run - "
+  println "DEBUG-INFO: Number of batches to run - "
   println number_of_batches
 
   if(params.start_batch > number_of_batches){
