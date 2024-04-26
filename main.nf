@@ -154,6 +154,7 @@ if (params.step =~ 2) {
       """
   }
   process make_bin_dir {
+    publishDir "results/", mode: params.mode
 
     input:
     path sample_bin_files from ch_bin_sample.collect()
@@ -205,17 +206,26 @@ if (params.step =~ 4 || params.step =~ 5 || params.step =~ 6) {
   } else if (params.rbindir) {
     ch_input_files = Channel.fromPath("${params.rbindir}/*")
   } else if (params.step =~ 2) {
+    println "DEBUG-INFO: bin path - "
     def bin_path = ch_bin.view().val
-    ch_input_files = Channel.fromPath("${bin_path}/*")
+    println "DEBUG-INFO: working directory - ${workflow.workDir.toUriString()}"
+    if (workflow.workDir.toUriString() =~ "s3:/"){
+      println "DEBUG-INFO: bin path in case of s3 - s3:/${bin_path}/"
+      Channel.fromPath("s3:/${bin_path}/*")
+        .set {ch_input_files}
+    }else{
+      Channel.fromPath("${bin_path}/*")
+        .set {ch_input_files}
+    }
   } else {
     log.error "Please provide --bindir or run step 2 first"
     exit 1
   }
 
-  println "Total number of samples in bin directory - "
+  println "DEBUG-INFO: Total number of samples in bin directory - "
   number_of_input_files = ch_input_files.count().view().val
   number_of_batches = (int) Math.ceil(number_of_input_files/params.target_size)
-  println "Number of batches to run - "
+  println "DEBUG-INFO: Number of batches to run - "
   println number_of_batches
 
   if(params.start_batch > number_of_batches){
@@ -414,6 +424,83 @@ if (params.step =~ 6){
       --tlen $target_size \
       --spos ${start_pos} \
       --skipem
+    """
+  }
+}
+
+if (params.step =~ 7){
+  if (params.rbindir) ch_rbin_dir = Channel.fromPath("${params.rbindir}")
+
+  process step_7_samplefile_gen {
+    label 'new_steps'
+    //echo true
+    publishDir "results/", mode: params.mode
+
+    input:
+    path rbin_dir from ch_rbin_dir
+
+    output:
+    path "samplefile.txt" into ch_samplefile
+
+    script:
+    """
+    cnest_dev.py step7 \
+      --samplefile samplefile.txt \
+      --rbindir $rbin_dir
+    """
+  }
+}
+
+if (params.step =~ 8){
+  if (params.rbindir) ch_rbin_dir = Channel.fromPath("${params.rbindir}")
+  if (params.samplefile) ch_samplefile = Channel.fromPath("${params.samplefile}")
+
+  process get_chr {
+    publishDir "results/${params.project}", mode: params.mode
+    label 'new_steps'
+
+    input:
+    path index from ch_index_tab
+
+    output:
+    path "chr_list.txt" into ch_chr_lits_file
+
+    script:
+    """
+    cut -f1 $index | uniq > chr_list.txt
+    """
+  }
+
+  ch_chr_lits_file
+    .map { it.text.split('\n').collect { it.toInteger() } }
+    .set { ch_chr_lits }
+
+  process step_8_cbin_gen {
+    tag "chr: ${chr}"
+    label 'new_steps'
+    //echo true
+    publishDir "results/", mode: params.mode
+
+    input:
+    path samplefile from ch_samplefile
+    path rbin_dir from ch_rbin_dir
+    path index from ch_index_tab
+    each chr from ch_chr_lits
+
+    output:
+    path "${params.project}/cbin/*"
+
+    script:
+    """
+    mkdir -p ${params.project}/cbin/
+    cnest_dev.py step8 \
+      --samplefile $samplefile \
+      --cnfile_dir ${params.project}/cbin/ \
+      --cnfile_name "cfnfile" \
+      --chr_n $chr \
+      --rbin_dir $rbin_dir \
+      --indextab $index \
+      --chunk_size ${params.target_size}
     """
   }
 }
