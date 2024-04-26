@@ -80,4 +80,21 @@ nextflow run main.nf \
     --gender "testdata/gender_classification.txt" \
     --index_tab "results/1kgp_subset_test/index_tab.txt" \
     --cov "testdata/hg38.1kb.chr-19-22-mean_coverage.txt"
+
+# Step 7 : Create Samplefile
+nextflow run main.nf \
+    --step 7 \
+    --project "1kgp_subset_test" \
+    --rbindir results/1kgp_subset_test/rbin
+
+
+# Step 8 : Create cbin files
+nextflow run main.nf \
+    --step 8 \
+    --project "1kgp_subset_test" \
+    --rbindir results/1kgp_subset_test/rbin \
+    --index_tab results/1kgp_subset_test/index_tab.txt \
+    --samplefile results/samplefile.txt \
+    -resume
+
 ```
