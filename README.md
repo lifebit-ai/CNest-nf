@@ -1,90 +1,83 @@
-# A Nextflow pipeline for copy number estimation and analysis using CNest
+# Nextflow pipeline for copy number estimation and analysis using CNest
 
-## Run with LSF/SLURM and Singularity
-Test with singularity version `3.5.0` and `3.7.0-1.el7`.
+Primary tool used in this pipeline - https://github.com/tf2/CNest
+
+## Run locally
+
+This pipeline can run in two modes - 
+1. Running End to end for all the steps
+2. Running individual steps
+
+### 1. Running End to end for all the steps
 
 ```bash
-#####################
-## Required arguments
-#####################
-
-module load singularity/3.5.0 
-ref_path=/hps/research1/birney/users/shimin/reference/UKBB_FE/genome.fa
-bed_path=/hps/research1/birney/users/shimin/CNest/index_files/ukbb_wes_index.bed
-project_name=test_proj
-design_file=design.csv
-batch_size=1000
-executor=lsf # set this to slurm for SLURM HPCs
-
-##########
-
-# Part 0 : Make index
-nextflow run -with-report p1_report.html -with-trace p1_trace  -profile $executor \
-    -r main -latest smshuai/CNest-nf \
-    --part 0 \
-    --project $project_name \
-    --bed $bed_path
-
-# Part 1 : Bait read count
-nextflow run -with-report p1_report.html -with-trace p1_trace  -profile $executor \
-    -r main -latest smshuai/CNest-nf \
-    --part 1 \
-    --project $project_name \
-    --design $design_file \
-    --ref $ref_path \
-    --indexb ./results/$project_name/index.bed
-
-# Part 2 : Gender QC
-nextflow run -with-report p2_report.html -with-trace p2_trace -profile $executor \
-    -r main -latest smshuai/CNest-nf \
-    --part 2 \
-    --project $project_name \
-    --bindir ./results/$project_name/bin/ \
-    --index ./results/$project_name/index_tab.txt
-
-# ! Do QC here before continue
-
-# Part 3 : logR-ratio calculation
-nextflow run -with-report p3_report.html -with-trace p3_trace -profile $executor \
-    -r main -latest smshuai/CNest-nf \
-    --part 3 \
-    --project $project_name \
-    --bindir ./results/$project_name/bin/ \
-    --index ./results/$project_name/index_tab.txt \
-    --gender ./results/gender_classification.txt \
-    --batch $batch_size
-
-# Part 4 : HMM call
-nextflow run -with-report p4_report.html -with-trace p4_trace -profile $executor \
-    -r main -latest smshuai/CNest-nf \
-    --part 4 \
-    --project $project_name \
-    --rbindir ./results/$project_name/rbin/ \
-    --cordir ./results/$project_name/cor/ \
-    --index ./results/$project_name/index_tab.txt \
-    --gender ./results/gender_classification.txt \
-    --cov ./results/mean_coverage.txt \
-    --batch $batch_size
+nextflow run main.nf \
+    --project "1kgp_subset_test" \
+    --design "testdata/1kg_CEU_7_samples_subset.csv" \
+    --bedgz "testdata/hg38.1kb.chr-19-22.baits.bed.gz" \
+    --gender "testdata/gender_classification.txt" \
+    --cov "testdata/hg38.1kb.chr-19-22-mean_coverage.txt"
 ```
 
-## Run with AWS
+or run from the test profile 
+
+```bash
+nextflow run main.nf -profile test,standard
 ```
-# Part 2 : Gender QC
-# ! $binfiles is a .txt with one bin file path per line
-nextflow run smshuai/CNest-nf \
-    --part 2 \
-    --project $project_name \
-    --binlist $binfiles \
-    --index ./results/$project_name/index_tab.txt
+
+### 2. Running individual steps
 
 
-# Part 3 : logR-ratio calculation
-nextflow run smshuai/CNest-nf \
-    --part 3 \
-    --project $project_name \
-    --bindir $bin_dir \
-    --index index_tab.txt \
-    --gender gender_classification.txt \
-    --batch $batch_size
+```bash
+# Step 1 : Make index
+nextflow run main.nf \
+    --step 1 \
+    --project "1kgp_subset_test" \
+    --bedgz "testdata/hg38.1kb.chr-19-22.baits.bed.gz"
 
+# Step 2 : Bait read count
+nextflow run main.nf \
+    --step 2 \
+    --project "1kgp_subset_test" \
+    --design "testdata/1kg_CEU_7_samples_subset.csv" \
+    --indexb "results/1kgp_subset_test/index.bed"
+
+# Step 3 : Gender QC
+nextflow run main.nf \
+    --step 3 \
+    --project "1kgp_subset_test" \
+    --bindir "results/1kgp_subset_test/bin" \
+    --index_tab "results/1kgp_subset_test/index_tab.txt"
+
+# Step 4 : logR-ratio calculation
+nextflow run main.nf \
+    --step 4 \
+    --batch_size 4 \
+    --target_size 4 \
+    --project "1kgp_subset_test" \
+    --bindir "results/1kgp_subset_test/bin" \
+    --index_tab "results/1kgp_subset_test/index_tab.txt"
+
+# Step 5 : log2 rbin file conversion
+nextflow run main.nf \
+    --step 5 \
+    --batch_size 4 \
+    --target_size 4 \
+    --project "1kgp_subset_test" \
+    --bindir "results/1kgp_subset_test/bin" \
+    --cordir "results/1kgp_subset_test/cor" \
+    --gender "testdata/gender_classification.txt" \
+    --index_tab "results/1kgp_subset_test/index_tab.txt"
+
+# Step 6 : HMM call
+nextflow run main.nf \
+    --step 6 \
+    --batch_size 4 \
+    --target_size 4 \
+    --project "1kgp_subset_test" \
+    --rbindir "results/1kgp_subset_test/rbin" \
+    --cordir "results/1kgp_subset_test/cor" \
+    --gender "testdata/gender_classification.txt" \
+    --index_tab "results/1kgp_subset_test/index_tab.txt" \
+    --cov "testdata/hg38.1kb.chr-19-22-mean_coverage.txt"
 ```
